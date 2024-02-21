@@ -10,8 +10,8 @@ OBJ_DIR := obj
 INC_DIR := include
 
 # Flags, Libraries and Includes
-CFLAGS := -Wall -I$(INC_DIR)
-LDFLAGS :=
+CFLAGS := -Wall -I$(INC_DIR) -pthread  # Add -pthread here for compilation
+LDFLAGS := -pthread  # Add -pthread here for linking
 LIBS :=
 
 # Source and Object Files
