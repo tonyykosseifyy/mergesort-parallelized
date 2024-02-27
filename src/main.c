@@ -4,11 +4,25 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+
 typedef struct {
     int *array;
     int left;
     int right;
 } Job;
+
+// function prototypes
+void merge(int *array, int left, int middle, int right);
+long sequential_sort(int *array, int size);
+void merge_sort(int *array, int left, int right);
+void *thread_task(void *data);
+long parallel_sort(int *array, int size, int numthreads);
+
 
 void merge(int *array, int left, int middle, int right) {
     int *temp = malloc((right - left + 1) * sizeof(int));
@@ -34,6 +48,19 @@ void merge(int *array, int left, int middle, int right) {
         array[left + k] = temp[k];
     }
     free(temp);
+}
+
+long sequential_sort(int *array, int size) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    // Perform the sorting
+    merge_sort(array, 0, size - 1);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long duration_ns = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+
+    return duration_ns;
 }
 
 void merge_sort(int *array, int left, int right) {
@@ -86,28 +113,27 @@ long parallel_sort(int *array, int size, int numthreads) {
 }
 
 int main() {
-    int size = 10;
-    int numthreads = 2; // Adjusted for demonstration
+    int size = 10000; // Increased size for more noticeable difference
+    int numthreads = 4; // Use an appropriate number of threads for parallel_sort
     int *array = malloc(size * sizeof(int));
+    int *array_copy = malloc(size * sizeof(int)); // Copy of the array for sequential sort
     srand(time(NULL));
 
     for (int i = 0; i < size; i++) {
-        array[i] = rand() % 100; // Random number from 0 to 99
+        array[i] = rand() % 100;
     }
+    memcpy(array_copy, array, size * sizeof(int)); // Copy the original array
 
-    printf("Original array:\n");
-    for (int i = 0; i < size; i++) {
-        printf("%d ", array[i]);
-    }
-    printf("\n");
+    // Parallel sort
+    long duration_ns_parallel = parallel_sort(array, size, numthreads);
+    printf("Parallel sorting took %ld nanoseconds.\n", duration_ns_parallel);
 
-    long duration_ns = parallel_sort(array, size, numthreads);
-    printf("Sorted array:\n");
-    for (int i = 0; i < size; i++) {
-        printf("%d ", array[i]);
-    }
-    printf("\nSorting took %ld nanoseconds.\n", duration_ns);
+    // Sequential sort
+    long duration_ns_sequential = sequential_sort(array_copy, size);
+    printf("Sequential sorting took %ld nanoseconds.\n", duration_ns_sequential);
 
+    // Free memory
     free(array);
+    free(array_copy);
     return 0;
 }
